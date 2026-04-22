@@ -3,120 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Il Mio Itinerario - Dark Menu & Tasto Celeste</title>
+    <title>Itinerario App</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
 
-        /* --- SIDEBAR IN TEMA SCURO --- */
         #sidebar {
-            width: 320px;
-            background: #1e1e1e;
-            color: #ecf0f1;
-            padding: 20px;
-            box-sizing: border-box;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.5); z-index: 3000;
-            display: flex; flex-direction: column;
-            transition: left 0.3s ease;
+            width: 320px; background: #1e1e1e; color: #ecf0f1; padding: 20px;
+            box-sizing: border-box; box-shadow: 2px 0 10px rgba(0,0,0,0.5); z-index: 3000;
+            display: flex; flex-direction: column; transition: left 0.3s ease;
         }
 
         #map { flex-grow: 1; cursor: crosshair; }
 
-        #appTitle { color: #ecf0f1; margin: 0 0 10px 0; font-size: 1.4em; cursor: pointer; }
-        #appTitleInput { font-size: 1.4em; font-weight: bold; margin-bottom: 10px; width: 100%; display: none; background: #2c2c2c; color: white; border: 1px dashed #555; }
+        /* Stili per Titolo Modificabile */
+        #appTitle { color: #ecf0f1; margin: 0 0 10px 0; font-size: 1.4em; cursor: pointer; transition: color 0.2s; }
+        #appTitle:hover { color: #00bfff; }
+        #appTitleInput { font-size: 1.4em; font-weight: bold; margin-bottom: 10px; width: 100%; display: none; background: #2c2c2c; color: white; border: 1px dashed #555; padding: 5px; }
 
         .search-group { margin-bottom: 20px; }
-
-        /* Input base */
         input, button, textarea, select { width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; box-sizing: border-box; font-family: inherit; }
+        #sidebar input, #sidebar select { background: #2c2c2c; color: white; border: 1px solid #444; }
 
-        /* Input specifici della sidebar */
-        #sidebar input { background: #2c2c2c; color: white; border: 1px solid #444; }
-        #sidebar input::placeholder { color: #888; }
-
-        /* PULSANTE CERCA CELESTE */
-        button.btn-primary {
-            background: #00bfff; /* Colore celeste */
-            color: white;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s ease;
-        }
-        button.btn-primary:hover { background: #009acd; /* Celeste leggermente più scuro al passaggio del mouse */ }
+        button.btn-primary { background: #00bfff; color: white; border: none; font-weight: bold; cursor: pointer; }
+        #filterSelect { font-size: 1em; font-weight: bold; color: #00bfff; border-color: #333; margin-bottom: 10px; cursor: pointer; }
 
         #itineraryList { flex-grow: 1; overflow-y: auto; margin-bottom: 15px; padding-right: 5px; }
 
-        .io-group {
-            display: flex; gap: 10px;
-            margin-top: auto;
-            padding-top: 15px; border-top: 1px solid #333;
-            padding-bottom: 15px;
+        .day-group { margin-top: 20px; margin-bottom: 10px; }
+        .day-header {
+            background: #34495e; color: #00bfff; padding: 5px 10px;
+            border-radius: 4px; font-size: 0.85em; font-weight: bold;
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;
         }
 
-        /* Pulsanti Import/Export scuri */
-        button.btn-secondary {
-            background: #2c2c2c; color: #ecf0f1; border: 1px solid #444;
-            font-weight: bold; cursor: pointer; font-size: 0.8em; flex: 1;
-            transition: 0.2s;
-        }
-        button.btn-secondary:hover { background: #3d3d3d; border-color: #555; }
-
-        /* Elementi Tappa nella sidebar scuri */
         .itinerary-item {
-            background: #2a2a2a; border: 1px solid #333; border-left: 5px solid #e74c3c;
-            padding: 12px; margin-bottom: 10px; border-radius: 4px; font-size: 0.9em;
+            background: #2a2a2a; border: 1px solid #333;
+            padding: 12px; margin-bottom: 8px; border-radius: 4px; font-size: 0.9em;
+            cursor: pointer; position: relative; transition: background 0.2s;
         }
+        .itinerary-item:hover { background: #333; }
+
+        .btn-edit-inline {
+            position: absolute; top: 10px; right: 10px;
+            background: #444; color: #00bfff; border: none; padding: 4px 8px;
+            border-radius: 4px; font-size: 0.75em; width: auto; margin: 0;
+            cursor: pointer;
+        }
+
         .itinerary-note { font-style: italic; color: #aaa; margin-top: 5px; font-size: 0.85em; border-top: 1px dashed #444; padding-top: 5px; }
 
-        /* Stile Label su Mappa */
-        .custom-tooltip {
-            background: #333; color: white; border: none; font-weight: bold;
-            border-radius: 4px; padding: 2px 8px; font-size: 11px;
-            white-space: nowrap;
-        }
-        .leaflet-tooltip-pane .leaflet-tooltip-top::before { border-top-color: #333; }
+        .io-group { display: flex; gap: 10px; margin-top: auto; padding-top: 15px; border-top: 1px solid #333; padding-bottom: 15px; }
+        button.btn-save { background: #00bfff; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 0.85em; flex: 1; }
+        button.btn-load { background: transparent; color: #00bfff; border: 2px solid #00bfff; font-weight: bold; cursor: pointer; font-size: 0.85em; flex: 1; }
 
-        /* Popup Form su Mappa */
+        .custom-tooltip { background: #333; color: white; border: none; font-weight: bold; border-radius: 4px; padding: 2px 8px; font-size: 11px; }
         .popup-form label { display: block; margin-top: 8px; font-size: 11px; color: #666; font-weight: bold; }
         .popup-form input, .popup-form textarea, .popup-form select { background: white; color: #333; border: 1px solid #ccc; }
-        .popup-form textarea { height: 50px; resize: none; font-size: 12px; }
-        .popup-form button { margin-top: 12px; background: #3498db; color: white; border:none; padding: 8px; cursor:pointer; width: 100%; font-weight: bold; border-radius: 4px; }
+        .popup-actions { display: flex; gap: 5px; margin-top: 12px; }
+        .btn-delete { background: #e74c3c !important; color: white; }
+        .btn-directions { background: #34a853 !important; color: white; margin-top: 8px; }
 
-        /* Icone personalizzate (SVG) */
-        .svg-icon { display: flex; justify-content: center; align-items: center; }
+        #mobileMenuBtn { display: none; position: absolute; top: 15px; right: 15px; z-index: 4000; background: #1e1e1e; color: white; border: 1px solid #333; padding: 10px 14px; border-radius: 6px; font-size: 1.4em; }
 
-        /* Pulsante Hamburger Mobile */
-        #mobileMenuBtn {
-            display: none;
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            z-index: 4000;
-            background: #1e1e1e;
-            color: white;
-            border: 1px solid #333;
-            padding: 10px 14px;
-            border-radius: 6px;
-            font-size: 1.4em;
-            cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            width: auto;
-            line-height: 1;
-        }
-
-        /* MEDIA QUERY per schermi piccoli */
         @media (max-width: 768px) {
             #mobileMenuBtn { display: block; }
-
-            #sidebar {
-                position: absolute;
-                left: -360px;
-                height: 100%;
-                width: 300px;
-                max-width: 80%;
-            }
-
+            #sidebar { position: absolute; left: -360px; height: 100%; width: 300px; max-width: 80%; }
             #sidebar.open { left: 0; }
         }
     </style>
@@ -126,7 +78,7 @@
 <button id="mobileMenuBtn" onclick="toggleSidebar()">☰</button>
 
 <div id="sidebar">
-    <h2 id="appTitle" title="Doppio click per modificare" ondblclick="abilitaModificaTitolo()">Il Mio Viaggio</h2>
+    <h2 id="appTitle" title="Doppio click per rinominare" ondblclick="abilitaModificaTitolo()">Itinerario App</h2>
     <input type="text" id="appTitleInput" onblur="salvaTitolo()" onkeydown="if(event.key==='Enter')salvaTitolo()">
 
     <div class="search-group">
@@ -134,12 +86,18 @@
         <button class="btn-primary" onclick="searchPlace()">Cerca</button>
     </div>
 
-    <h3 style="font-size: 0.9em; color: #8a9ba8; margin-bottom: 5px;">Tappe Itinerario</h3>
+    <select id="filterSelect" onchange="aggiornaUI()">
+        <option value="tutti">Tutti i Punti</option>
+        <option value="tappa" selected>Solo Tappe</option>
+        <option value="interesse">Solo Interessi</option>
+        <option value="cibo">Solo Cibo</option>
+    </select>
+
     <div id="itineraryList"></div>
 
     <div class="io-group">
-        <button class="btn-secondary" onclick="exportJSON()">⬇️ Esporta</button>
-        <button class="btn-secondary" onclick="document.getElementById('importInput').click()">⬆️ Importa</button>
+        <button class="btn-save" onclick="exportJSON()">Salva</button>
+        <button class="btn-load" onclick="document.getElementById('importInput').click()">Carica</button>
         <input type="file" id="importInput" style="display:none" accept=".json" onchange="importJSON(event)">
     </div>
 </div>
@@ -148,74 +106,50 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    const map = L.map('map', {
-        doubleClickZoom: false,
-        tap: false
-    }).setView([41.9028, 12.4964], 6);
-
-    // Mappa Minimale
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-        subdomains: 'abcd',
-        maxZoom: 20
-    }).addTo(map);
+    const map = L.map('map', { doubleClickZoom: false, tap: false }).setView([41.9028, 12.4964], 6);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
     let tappe = [];
 
-    // --- GESTIONE MOBILE SIDEBAR E DOPPIO TAP ---
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('open');
-    }
-
-    let ultimoClick = 0;
-
-    map.on('click', function(e) {
-        const sidebar = document.getElementById('sidebar');
-
-        if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
-            sidebar.classList.remove('open');
-            ultimoClick = 0;
-            return;
-        }
-
-        const ora = new Date().getTime();
-        if (ora - ultimoClick < 400) {
-            addTappa(e.latlng.lat, e.latlng.lng, "Nuovo Punto");
-            ultimoClick = 0;
-        } else {
-            ultimoClick = ora;
-        }
-    });
-
-    // --- CREAZIONE ICONE SVG ---
-    function creaIcona(colore) {
-        return L.divIcon({
-            className: 'svg-icon',
-            html: `<svg width="30" height="42" viewBox="0 0 30 42" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M15 0C6.71573 0 0 6.71573 0 15C0 26.25 15 42 15 42C15 42 30 26.25 30 15C30 6.71573 23.2843 0 15 0ZM15 20.625C11.8934 20.625 9.375 18.1066 9.375 15C9.375 11.8934 11.8934 9.375 15 9.375C18.1066 9.375 20.625 11.8934 20.625 15C20.625 18.1066 18.1066 20.625 15 20.625Z" fill="${colore}"/>
-                       </svg>`,
-            iconSize: [30, 42],
-            iconAnchor: [15, 42],
-            popupAnchor: [0, -40]
-        });
-    }
-
-    // --- TITOLO ---
+    // --- GESTIONE TITOLO ---
     function abilitaModificaTitolo() {
-        document.getElementById('appTitle').style.display = 'none';
+        const h2 = document.getElementById('appTitle');
         const input = document.getElementById('appTitleInput');
+        input.value = h2.innerText;
+        h2.style.display = 'none';
         input.style.display = 'block';
-        input.value = document.getElementById('appTitle').innerText;
         input.focus();
     }
     function salvaTitolo() {
-        const val = document.getElementById('appTitleInput').value;
-        if(val.trim()) document.getElementById('appTitle').innerText = val;
-        document.getElementById('appTitleInput').style.display = 'none';
-        document.getElementById('appTitle').style.display = 'block';
+        const h2 = document.getElementById('appTitle');
+        const input = document.getElementById('appTitleInput');
+        if (input.value.trim()) h2.innerText = input.value.trim();
+        input.style.display = 'none';
+        h2.style.display = 'block';
     }
 
-    // --- RICERCA E AGGIUNTA PIN ---
+    // --- LOGICA MAPPA ---
+    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+
+    let ultimoClick = 0;
+    map.on('click', function(e) {
+        if (window.innerWidth <= 768 && document.getElementById('sidebar').classList.contains('open')) {
+            document.getElementById('sidebar').classList.remove('open');
+            return;
+        }
+        const ora = new Date().getTime();
+        if (ora - ultimoClick < 400) { addTappa(e.latlng.lat, e.latlng.lng, "Nuovo Punto"); ultimoClick = 0; }
+        else { ultimoClick = ora; }
+    });
+
+    function creaIcona(colore) {
+        return L.divIcon({
+            className: 'svg-icon',
+            html: `<svg width="30" height="42" viewBox="0 0 30 42"><path d="M15 0C6.7 0 0 6.7 0 15c0 11.2 15 27 15 27s15-15.8 15-27c0-8.3-6.7-15-15-15zm0 20.6c-3.1 0-5.6-2.5-5.6-5.6 0-3.1 2.5-5.6 5.6-5.6 3.1 0 5.6 2.5 5.6 5.6 0 3.1-2.5 5.6-5.6 5.6z" fill="${colore}"/></svg>`,
+            iconSize: [30, 42], iconAnchor: [15, 42], popupAnchor: [0, -40]
+        });
+    }
+
     async function searchPlace() {
         const q = document.getElementById('searchBox').value;
         if (!q) return;
@@ -224,32 +158,16 @@
         if (data.length > 0) {
             addTappa(data[0].lat, data[0].lon, data[0].display_name.split(',')[0]);
             map.setView([data[0].lat, data[0].lon], 12);
-
-            if (window.innerWidth <= 768) {
-                document.getElementById('sidebar').classList.remove('open');
-            }
         }
     }
 
-    function addTappa(lat, lng, label, orario = "--:--", ordine = null, note = "", tipo = "tappa") {
+    function addTappa(lat, lng, label, orario = "--:--", note = "", tipo = "tappa", dataVal = "") {
         const id = Date.now() + Math.random();
-        const nuovaTappa = {
-            id, lat, lng, label, orario, note, tipo,
-            ordine: ordine || tappe.length + 1
-        };
-
-        const colore = tipo === "tappa" ? "#e74c3c" : "#f1c40f";
+        const nuovaTappa = { id, lat, lng, label, orario, note, tipo, dataVal };
+        let colore = tipo === "interesse" ? "#f1c40f" : tipo === "cibo" ? "#e67e22" : "#e74c3c";
         const marker = L.marker([lat, lng], { icon: creaIcona(colore) }).addTo(map);
-
-        marker.bindTooltip(nuovaTappa.label, {
-            permanent: true,
-            direction: 'top',
-            className: 'custom-tooltip',
-            offset: [0, -45]
-        });
-
+        marker.bindTooltip(nuovaTappa.label, { permanent: true, direction: 'top', className: 'custom-tooltip', offset: [0, -45] });
         marker.bindPopup(() => creaFormPopup(nuovaTappa));
-
         nuovaTappa.marker = marker;
         tappe.push(nuovaTappa);
         aggiornaUI();
@@ -259,16 +177,21 @@
         const div = document.createElement('div');
         div.className = 'popup-form';
         div.innerHTML = `
-                <label>Tipo Punto</label>
+                <label>Tipo</label>
                 <select id="ed-tipo-${tappa.id}">
-                    <option value="tappa" ${tappa.tipo === 'tappa' ? 'selected' : ''}>Tappa (Rosso)</option>
-                    <option value="interesse" ${tappa.tipo === 'interesse' ? 'selected' : ''}>Interesse (Giallo)</option>
+                    <option value="tappa" ${tappa.tipo === 'tappa' ? 'selected' : ''}>Tappa</option>
+                    <option value="interesse" ${tappa.tipo === 'interesse' ? 'selected' : ''}>Interesse</option>
+                    <option value="cibo" ${tappa.tipo === 'cibo' ? 'selected' : ''}>Cibo</option>
                 </select>
+                <label>Data</label><input type="date" id="ed-d-${tappa.id}" value="${tappa.dataVal}">
                 <label>Etichetta</label><input type="text" id="ed-l-${tappa.id}" value="${tappa.label}">
                 <label>Orario</label><input type="time" id="ed-t-${tappa.id}" value="${tappa.orario !== '--:--' ? tappa.orario : ''}">
-                <label>Ordine</label><input type="number" id="ed-o-${tappa.id}" value="${tappa.ordine}">
                 <label>Note</label><textarea id="ed-n-${tappa.id}">${tappa.note}</textarea>
-                <button onclick="salvaModifiche(${tappa.id})">Salva</button>
+                <div class="popup-actions">
+                    <button onclick="salvaModifiche(${tappa.id})">Salva</button>
+                    <button class="btn-delete" onclick="eliminaTappa(${tappa.id})">Elimina</button>
+                </div>
+                <button type="button" class="btn-directions" onclick="window.open('http://googleusercontent.com/maps.google.com/maps?daddr=${tappa.lat},${tappa.lng}', '_blank')">🗺️ Indicazioni</button>
             `;
         return div;
     }
@@ -276,74 +199,102 @@
     window.salvaModifiche = function(id) {
         const t = tappe.find(x => x.id === id);
         t.tipo = document.getElementById(`ed-tipo-${id}`).value;
+        t.dataVal = document.getElementById(`ed-d-${id}`).value;
         t.label = document.getElementById(`ed-l-${id}`).value || "Punto";
         t.orario = document.getElementById(`ed-t-${id}`).value || "--:--";
-        t.ordine = parseInt(document.getElementById(`ed-o-${id}`).value);
         t.note = document.getElementById(`ed-n-${id}`).value;
-
-        const nuovoColore = t.tipo === "tappa" ? "#e74c3c" : "#f1c40f";
-        t.marker.setIcon(creaIcona(nuovoColore));
+        let colore = t.tipo === "interesse" ? "#f1c40f" : t.tipo === "cibo" ? "#e67e22" : "#e74c3c";
+        t.marker.setIcon(creaIcona(colore));
         t.marker.setTooltipContent(t.label);
         t.marker.closePopup();
         aggiornaUI();
     };
 
+    window.eliminaTappa = function(id) {
+        if (!confirm("Eliminare?")) return;
+        const idx = tappe.findIndex(x => x.id === id);
+        map.removeLayer(tappe[idx].marker);
+        tappe.splice(idx, 1);
+        aggiornaUI();
+    };
+
+    window.focusPoint = function(id) {
+        const t = tappe.find(x => x.id === id);
+        if (!t) return;
+        map.setView([t.lat, t.lng], 15);
+        if (window.innerWidth <= 768) toggleSidebar();
+    };
+
+    window.editPoint = function(e, id) {
+        e.stopPropagation();
+        const t = tappe.find(x => x.id === id);
+        if (!t) return;
+        map.setView([t.lat, t.lng], 15);
+        t.marker.openPopup();
+        if (window.innerWidth <= 768) toggleSidebar();
+    };
+
     function aggiornaUI() {
         const list = document.getElementById('itineraryList');
         list.innerHTML = '';
+        const filtro = document.getElementById('filterSelect').value;
+        let filtrati = filtro === "tutti" ? tappe : tappe.filter(t => t.tipo === filtro);
 
-        const soloTappe = tappe.filter(t => t.tipo === "tappa");
-        soloTappe.sort((a, b) => a.ordine - b.ordine);
-
-        soloTappe.forEach(t => {
-            const div = document.createElement('div');
-            div.className = 'itinerary-item';
-            let noteHtml = t.note ? `<div class="itinerary-note">${t.note.replace(/\n/g, '<br>')}</div>` : '';
-            div.innerHTML = `
-                    <b>#${t.ordine} - ${t.label}</b><br>
-                    <small>🕒 ${t.orario}</small>
-                    ${noteHtml}
-                `;
-            list.appendChild(div);
+        filtrati.sort((a, b) => {
+            if ((a.dataVal || "9999") !== (b.dataVal || "9999")) return (a.dataVal || "9999") > (b.dataVal || "9999") ? 1 : -1;
+            return (a.orario || "23:59") > (b.orario || "23:59") ? 1 : -1;
         });
+
+        const gruppi = filtrati.reduce((acc, t) => {
+            const d = t.dataVal || "Data da definire";
+            if (!acc[d]) acc[d] = [];
+            acc[d].push(t);
+            return acc;
+        }, {});
+
+        for (const data in gruppi) {
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'day-group';
+            const dataDisplay = data !== "Data da definire" ? new Date(data).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }) : data;
+            dayDiv.innerHTML = `<div class="day-header">${dataDisplay}</div>`;
+
+            gruppi[data].forEach(t => {
+                const item = document.createElement('div');
+                item.className = 'itinerary-item';
+                item.onclick = () => focusPoint(t.id);
+                item.style.borderLeft = `5px solid ${t.tipo === "interesse" ? "#f1c40f" : t.tipo === "cibo" ? "#e67e22" : "#e74c3c"}`;
+                item.innerHTML = `
+                        <button class="btn-edit-inline" onclick="editPoint(event, ${t.id})">✎</button>
+                        <b>${t.label}</b><br>
+                        <small>🕒 ${t.orario}</small>
+                        ${t.note ? `<div class="itinerary-note">${t.note}</div>` : ''}
+                    `;
+                dayDiv.appendChild(item);
+            });
+            list.appendChild(dayDiv);
+        }
     }
 
-    // --- IMPORT / EXPORT ---
     function exportJSON() {
-        const datiDaSalvare = {
+        const dati = {
             titolo: document.getElementById('appTitle').innerText,
-            tappe: tappe.map(t => ({
-                lat: t.lat, lng: t.lng, label: t.label,
-                orario: t.orario, ordine: t.ordine, note: t.note, tipo: t.tipo
-            }))
+            tappe: tappe.map(({marker, ...rest}) => rest)
         };
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(datiDaSalvare));
-        const dl = document.createElement('a');
-        dl.setAttribute("href", dataStr);
-        dl.setAttribute("download", "viaggio.json");
-        dl.click();
+        const blob = new Blob([JSON.stringify(dati)], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = "viaggio.json"; a.click();
     }
 
-    function importJSON(event) {
-        const file = event.target.files[0];
-        if (!file) return;
+    function importJSON(e) {
         const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const json = JSON.parse(e.target.result);
-                tappe.forEach(t => map.removeLayer(t.marker));
-                tappe = [];
-                if(json.titolo) document.getElementById('appTitle').innerText = json.titolo;
-                json.tappe.forEach(t => {
-                    addTappa(t.lat, t.lng, t.label, t.orario, t.ordine, t.note || "", t.tipo || "tappa");
-                });
-                if(tappe.length > 0) {
-                    const group = new L.featureGroup(tappe.map(t => t.marker));
-                    map.fitBounds(group.getBounds().pad(0.5));
-                }
-            } catch (err) { alert("Errore nel file."); }
+        reader.onload = function(event) {
+            const json = JSON.parse(event.target.result);
+            tappe.forEach(t => map.removeLayer(t.marker));
+            tappe = [];
+            if (json.titolo) document.getElementById('appTitle').innerText = json.titolo;
+            json.tappe.forEach(t => addTappa(t.lat, t.lng, t.label, t.orario, t.note, t.tipo, t.dataVal));
         };
-        reader.readAsText(file);
+        reader.readAsText(e.target.files[0]);
     }
 </script>
 </body>
