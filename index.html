@@ -3,51 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Il Mio Itinerario - Mobile Fix</title>
+    <title>Il Mio Itinerario - Dark Menu & Tasto Celeste</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        /* Uso 100dvh per adattarsi alla barra URL dei telefoni (con fallback a 100vh per i vecchi browser) */
         body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
 
+        /* --- SIDEBAR IN TEMA SCURO --- */
         #sidebar {
-            width: 320px; background: #fdfdfd; padding: 20px;
-            box-sizing: border-box; /* FIX IMPORTANTE: impedisce al padding di ingrandire la barra oltre lo schermo */
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 3000;
+            width: 320px;
+            background: #1e1e1e;
+            color: #ecf0f1;
+            padding: 20px;
+            box-sizing: border-box;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.5); z-index: 3000;
             display: flex; flex-direction: column;
             transition: left 0.3s ease;
         }
 
         #map { flex-grow: 1; cursor: crosshair; }
 
-        #appTitle { color: #2c3e50; margin: 0 0 10px 0; font-size: 1.4em; cursor: pointer; }
-        #appTitleInput { font-size: 1.4em; font-weight: bold; margin-bottom: 10px; width: 100%; display: none; }
+        #appTitle { color: #ecf0f1; margin: 0 0 10px 0; font-size: 1.4em; cursor: pointer; }
+        #appTitleInput { font-size: 1.4em; font-weight: bold; margin-bottom: 10px; width: 100%; display: none; background: #2c2c2c; color: white; border: 1px dashed #555; }
 
         .search-group { margin-bottom: 20px; }
-        input, button, textarea, select { width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box; font-family: inherit; }
 
-        button.btn-primary { background: #27ae60; color: white; border: none; font-weight: bold; cursor: pointer; }
+        /* Input base */
+        input, button, textarea, select { width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; box-sizing: border-box; font-family: inherit; }
+
+        /* Input specifici della sidebar */
+        #sidebar input { background: #2c2c2c; color: white; border: 1px solid #444; }
+        #sidebar input::placeholder { color: #888; }
+
+        /* PULSANTE CERCA CELESTE */
+        button.btn-primary {
+            background: #00bfff; /* Colore celeste */
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        button.btn-primary:hover { background: #009acd; /* Celeste leggermente più scuro al passaggio del mouse */ }
 
         #itineraryList { flex-grow: 1; overflow-y: auto; margin-bottom: 15px; padding-right: 5px; }
 
         .io-group {
             display: flex; gap: 10px;
             margin-top: auto;
-            padding-top: 15px; border-top: 1px solid #eee;
-            padding-bottom: 15px; /* Un po' di respiro in più in basso per mobile */
+            padding-top: 15px; border-top: 1px solid #333;
+            padding-bottom: 15px;
         }
-        button.btn-secondary {
-            background: #3498db; color: white; border: none;
-            font-weight: bold; cursor: pointer; font-size: 0.8em; flex: 1;
-        }
-        button:hover { opacity: 0.9; }
 
+        /* Pulsanti Import/Export scuri */
+        button.btn-secondary {
+            background: #2c2c2c; color: #ecf0f1; border: 1px solid #444;
+            font-weight: bold; cursor: pointer; font-size: 0.8em; flex: 1;
+            transition: 0.2s;
+        }
+        button.btn-secondary:hover { background: #3d3d3d; border-color: #555; }
+
+        /* Elementi Tappa nella sidebar scuri */
         .itinerary-item {
-            background: white; border: 1px solid #eee; border-left: 5px solid #e74c3c;
+            background: #2a2a2a; border: 1px solid #333; border-left: 5px solid #e74c3c;
             padding: 12px; margin-bottom: 10px; border-radius: 4px; font-size: 0.9em;
         }
-        .itinerary-note { font-style: italic; color: #666; margin-top: 5px; font-size: 0.85em; border-top: 1px dashed #eee; padding-top: 5px; }
+        .itinerary-note { font-style: italic; color: #aaa; margin-top: 5px; font-size: 0.85em; border-top: 1px dashed #444; padding-top: 5px; }
 
-        /* Stile Label */
+        /* Stile Label su Mappa */
         .custom-tooltip {
             background: #333; color: white; border: none; font-weight: bold;
             border-radius: 4px; padding: 2px 8px; font-size: 11px;
@@ -55,53 +77,53 @@
         }
         .leaflet-tooltip-pane .leaflet-tooltip-top::before { border-top-color: #333; }
 
-        /* Popup Form */
+        /* Popup Form su Mappa */
         .popup-form label { display: block; margin-top: 8px; font-size: 11px; color: #666; font-weight: bold; }
+        .popup-form input, .popup-form textarea, .popup-form select { background: white; color: #333; border: 1px solid #ccc; }
         .popup-form textarea { height: 50px; resize: none; font-size: 12px; }
         .popup-form button { margin-top: 12px; background: #3498db; color: white; border:none; padding: 8px; cursor:pointer; width: 100%; font-weight: bold; border-radius: 4px; }
 
         /* Icone personalizzate (SVG) */
         .svg-icon { display: flex; justify-content: center; align-items: center; }
 
-        /* Pulsante Hamburger Mobile (Nascosto su PC) */
+        /* Pulsante Hamburger Mobile */
         #mobileMenuBtn {
             display: none;
             position: absolute;
             top: 15px;
             right: 15px;
             z-index: 4000;
-            background: #2c3e50;
+            background: #1e1e1e;
             color: white;
-            border: none;
-            padding: 10px 15px;
+            border: 1px solid #333;
+            padding: 10px 14px;
             border-radius: 6px;
-            font-size: 1.2em;
+            font-size: 1.4em;
             cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
             width: auto;
+            line-height: 1;
         }
 
-        /* MEDIA QUERY per schermi piccoli (Tablet/Smartphone) */
+        /* MEDIA QUERY per schermi piccoli */
         @media (max-width: 768px) {
             #mobileMenuBtn { display: block; }
 
             #sidebar {
                 position: absolute;
-                left: -360px; /* Nascondi fuori dallo schermo */
+                left: -360px;
                 height: 100%;
                 width: 300px;
                 max-width: 80%;
             }
 
-            #sidebar.open {
-                left: 0;
-            }
+            #sidebar.open { left: 0; }
         }
     </style>
 </head>
 <body>
 
-<button id="mobileMenuBtn" onclick="toggleSidebar()">☰ Menu</button>
+<button id="mobileMenuBtn" onclick="toggleSidebar()">☰</button>
 
 <div id="sidebar">
     <h2 id="appTitle" title="Doppio click per modificare" ondblclick="abilitaModificaTitolo()">Il Mio Viaggio</h2>
@@ -112,7 +134,7 @@
         <button class="btn-primary" onclick="searchPlace()">Cerca</button>
     </div>
 
-    <h3 style="font-size: 0.9em; color: #7f8c8d; margin-bottom: 5px;">Tappe Itinerario</h3>
+    <h3 style="font-size: 0.9em; color: #8a9ba8; margin-bottom: 5px;">Tappe Itinerario</h3>
     <div id="itineraryList"></div>
 
     <div class="io-group">
@@ -128,10 +150,15 @@
 <script>
     const map = L.map('map', {
         doubleClickZoom: false,
-        tap: false // Disabilito il tap delay nativo di Leaflet per gestire il touch manualmente
+        tap: false
     }).setView([41.9028, 12.4964], 6);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    // Mappa Minimale
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+        subdomains: 'abcd',
+        maxZoom: 20
+    }).addTo(map);
 
     let tappe = [];
 
@@ -140,23 +167,21 @@
         document.getElementById('sidebar').classList.toggle('open');
     }
 
-    let ultimoClick = 0; // Variabile per tracciare il tempo del tap
+    let ultimoClick = 0;
 
     map.on('click', function(e) {
         const sidebar = document.getElementById('sidebar');
 
-        // 1. Se la barra è aperta su mobile, cliccare la mappa la chiude (niente pin!)
         if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
             sidebar.classList.remove('open');
-            ultimoClick = 0; // reset
+            ultimoClick = 0;
             return;
         }
 
-        // 2. Logica Custom per il Doppio Tap/Click
         const ora = new Date().getTime();
-        if (ora - ultimoClick < 400) { // Se passano meno di 400 millisecondi è un doppio tap
+        if (ora - ultimoClick < 400) {
             addTappa(e.latlng.lat, e.latlng.lng, "Nuovo Punto");
-            ultimoClick = 0; // Reset
+            ultimoClick = 0;
         } else {
             ultimoClick = ora;
         }
